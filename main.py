@@ -139,25 +139,27 @@ checkpoint_callback = ModelCheckpoint(
     verbose=1
 )
 
-# Entrenamiento
+# Calcular steps_per_epoch basado en el número de imágenes y batch_size
+train_steps = len(train_generator.filenames) // train_generator.batch_size
+val_steps = len(validation_generator.filenames) // validation_generator.batch_size
+test_steps = len(test_generator.filenames) // test_generator.batch_size
+
+# Entrenamiento del modelo sin incluir las métricas de prueba en cada época
 history = model.fit(
     train_generator,
-    steps_per_epoch=75,
+    steps_per_epoch=train_steps,
     epochs=20,
     validation_data=validation_generator,
-    validation_steps=25,
+    validation_steps=val_steps,
     callbacks=[checkpoint_callback]
 )
 
-# Evaluar en el conjunto de prueba
-test_loss, test_acc = model.evaluate(test_generator, steps=25)
+# Evaluar en el conjunto de prueba solo después del entrenamiento
+test_loss, test_acc = model.evaluate(test_generator, steps=test_steps)
 print('Test accuracy:', test_acc)
+print('Test loss:', test_loss)
 
-# Guardar las métricas de prueba en el historial
-history.history['test_accuracy'] = [test_acc] * len(history.history['accuracy'])
-history.history['test_loss'] = [test_loss] * len(history.history['loss'])
-
-# Graficar métricas de entrenamiento, validación y prueba
+# Graficar las métricas de entrenamiento y validación, y añadir los resultados de test al final
 epochs = range(1, len(history.history['accuracy']) + 1)
 
 plt.figure(figsize=(12, 5))
@@ -166,7 +168,7 @@ plt.figure(figsize=(12, 5))
 plt.subplot(1, 2, 1)
 plt.plot(epochs, history.history['accuracy'], 'bo-', label='Training Accuracy')
 plt.plot(epochs, history.history['val_accuracy'], 'r^-', label='Validation Accuracy')
-plt.plot(epochs, history.history['test_accuracy'], 'gs-', label='Test Accuracy')
+plt.axhline(test_acc, color='g', linestyle='--', label='Test Accuracy')  # Línea constante para el test accuracy
 plt.title('Training, Validation, and Test Accuracy')
 plt.xlabel('Epochs')
 plt.ylabel('Accuracy')
@@ -176,7 +178,7 @@ plt.legend()
 plt.subplot(1, 2, 2)
 plt.plot(epochs, history.history['loss'], 'bo-', label='Training Loss')
 plt.plot(epochs, history.history['val_loss'], 'r^-', label='Validation Loss')
-plt.plot(epochs, history.history['test_loss'], 'gs-', label='Test Loss')
+plt.axhline(test_loss, color='g', linestyle='--', label='Test Loss')  # Línea constante para el test loss
 plt.title('Training, Validation, and Test Loss')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
