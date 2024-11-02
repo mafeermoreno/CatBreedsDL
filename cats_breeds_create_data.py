@@ -53,7 +53,7 @@ def split_dataset(source_folder, train_folder, val_folder, test_folder, split_ra
             shutil.copy(os.path.join(breeds_path, cat), os.path.join(test_direction, cat))
 
 # Definir las rutas de las carpetas
-main_folder = 'cats'  # Esta es la carpeta principal que contiene las subcarpetas de cada raza
+main_folder = 'cats' # Carpeta que contiene las carpetas de imágenes de los tipos de gatos
 train_cats_folder = 'data/train'
 val_cats_folder = 'data/validation'
 test_cats_folder = 'data/test'

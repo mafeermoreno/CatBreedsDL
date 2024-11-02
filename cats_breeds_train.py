@@ -4,6 +4,8 @@ from tensorflow.keras import models, layers, optimizers
 from tensorflow.keras.applications import VGG16
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import ModelCheckpoint
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import numpy as np
 
 # Definir las rutas de las carpetas
 train_cats_folder = 'data/train'
@@ -79,12 +81,7 @@ checkpoint_callback = ModelCheckpoint(
     verbose=1
 )
 
-# Calcular steps_per_epoch basado en el número de imágenes y batch_size
-train_steps = len(train_generator.filenames) // train_generator.batch_size
-val_steps = len(val_generator.filenames) // val_generator.batch_size
-test_steps = len(test_generator.filenames) // test_generator.batch_size
-
-# Entrenamiento del modelo sin evaluar el conjunto de test en cada época
+# Entrenamiento del modelo
 history = model.fit(
     train_generator,
     steps_per_epoch=75,          
@@ -94,7 +91,7 @@ history = model.fit(
     callbacks=[checkpoint_callback]
 )
 
-# Evaluar en el conjunto de prueba solo al final del entrenamiento
+# Evaluar en el conjunto de prueba 
 test_loss, test_acc = model.evaluate(test_generator, steps=25)  
 print(f"\nFinal Test Loss: {test_loss:.4f} - Final Test Accuracy: {test_acc:.4f}")
 
@@ -105,8 +102,8 @@ plt.figure(figsize=(12, 5))
 
 # Gráfica de precisión
 plt.subplot(1, 2, 1)
-plt.plot(epochs, history.history['accuracy'], 'bo-', label='Training Accuracy')
-plt.plot(epochs, history.history['val_accuracy'], 'r^-', label='Validation Accuracy')
+plt.plot(epochs, history.history['accuracy'], color='orchid', marker='o', linestyle='-', label='Training Accuracy')
+plt.plot(epochs, history.history['val_accuracy'], color='hotpink', marker='^', linestyle='-', label='Validation Accuracy')
 plt.title('Training and Validation Accuracy')
 plt.xlabel('Epochs')
 plt.ylabel('Accuracy')
@@ -114,11 +111,26 @@ plt.legend()
 
 # Gráfica de pérdida
 plt.subplot(1, 2, 2)
-plt.plot(epochs, history.history['loss'], 'bo-', label='Training Loss')
-plt.plot(epochs, history.history['val_loss'], 'r^-', label='Validation Loss')
+plt.plot(epochs, history.history['loss'], color='orchid', marker='o', linestyle='-', label='Training Loss')
+plt.plot(epochs, history.history['val_loss'], color='hotpink', marker='^', linestyle='-', label='Validation Loss')
 plt.title('Training and Validation Loss')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
 
+plt.show()
+
+# Obtener predicciones en el conjunto de prueba
+y_pred = model.predict(test_generator)
+y_pred_classes = np.argmax(y_pred, axis=1)
+
+# Obtener etiquetas verdaderas del conjunto de prueba
+y_true = test_generator.classes
+
+# Calcular y mostrar la matriz de confusión
+conf_matrix = confusion_matrix(y_true, y_pred_classes)
+class_names = list(test_generator.class_indices.keys())  # Nombres de las clases
+disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=class_names)
+disp.plot(cmap=plt.cm.Blues)
+plt.title("Confusion Matrix")
 plt.show()
